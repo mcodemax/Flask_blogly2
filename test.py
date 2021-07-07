@@ -2,7 +2,7 @@ from unittest import TestCase
 from app import app
 from flask import session
 
-from models import db, User
+from models import db, User, Post
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:myPassword@localhost:5433/blogly_test' 
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
@@ -24,7 +24,12 @@ class FlaskTests(TestCase):
 
         self.client = app.test_client()
         app.config['TESTING'] = True
+        
+        db.drop_all()
+        db.create_all()
+
         User.query.delete()
+        Post.query.delete()
 
     def tearDown(self):
         """Clean up"""
@@ -52,16 +57,14 @@ class FlaskTests(TestCase):
             self.assertIn('Fname1', html)
 
     def test_user_deletion(self):
-        """Test if user info generated on html"""
+        """Test if user info deleted"""
         user = User(first_name='Fname1', last_name="Lname1", image_url='https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Two_red_dice_01.svg/1200px-Two_red_dice_01.svg.png')
         db.session.add(user)
         db.session.commit()
 
         with self.client as client: 
             res = client.post('/users/1/delete', follow_redirects=True)
-            html = res.get_data(as_text=True) 
-
-            
+                   
             self.assertIsNone(User.query.get(1))
 
     def test_edit_render(self):
@@ -75,3 +78,37 @@ class FlaskTests(TestCase):
             html = res.get_data(as_text=True) 
 
             self.assertIn('edit-user', html)
+
+    def test_post_deletion(self):
+        """Test if post gets deleted"""
+        user = User(first_name='Fname1', last_name="Lname1", image_url='https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Two_red_dice_01.svg/1200px-Two_red_dice_01.svg.png')
+        db.session.add(user)
+        db.session.commit()
+
+        post = Post(title='This A Title', content='This my content', user_id=1)
+        db.session.add(post)
+        db.session.commit()
+
+        with self.client as client: 
+            res = client.post('/posts/1/delete', follow_redirects=True)
+            html = res.get_data(as_text=True) 
+
+            self.assertIsNone(Post.query.get(1))
+
+
+    def test_post_edit_form_route(self):
+        """Test if html form to edit a post is rendered"""
+        user = User(first_name='Fname1', last_name="Lname1", image_url='https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Two_red_dice_01.svg/1200px-Two_red_dice_01.svg.png')
+        db.session.add(user)
+        db.session.commit()
+
+        post = Post(title='This A Title', content='This my content', user_id=1)
+        db.session.add(post)
+        db.session.commit()
+    
+        with self.client as client: 
+            res = client.get('/posts/1/edit', follow_redirects=True)
+            html = res.get_data(as_text=True) 
+
+            self.assertIn('This A Title',html)
+            self.assertIn('Fname1',html)

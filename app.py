@@ -217,7 +217,7 @@ def edit_post(post_id):
     title = request.form.get("title")
     content = request.form.get("content")
 
-    if len(title) > 50 or len(content) > 5000: #bad to hardcore numbers; refactor possibly
+    if len(title) > 50 or len(content) > 5000: #bad to hardcode numbers; refactor possibly
         redir_route = '/posts/' + str(post_id) + '/edit'
         return redirect(redir_route)
     
