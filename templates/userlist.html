@@ -9,14 +9,14 @@
 <section id="users">
     {% for user in users %}
     <ul>
-        <li><a href="/users/{{user.id}}">{{user.first_name}} {{user.last_name}}</a></li>
+        <li><a href="/users/{{user.id}}">{{user.first_name}} {% if user.last_name %}
+            {{user.last_name}} 
+        {% endif %}</a></li>
     </ul>
     {% endfor %}
     
     <a id="add-user" href="/users/new">Add a user</a>
 </section>
-
-
 
 {% endblock %}
 

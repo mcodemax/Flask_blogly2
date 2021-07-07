@@ -2,7 +2,7 @@
 
 from flask import Flask, request, render_template, redirect, flash, session
 from flask_debugtoolbar import DebugToolbarExtension
-from models import db, connect_db, User
+from models import db, connect_db, User, Post
 
 
 app = Flask(__name__)
@@ -116,7 +116,7 @@ def edit_user(user_num):
 
     user = User.query.get(user_num)
 
-    return render_template('edit.html',user_num=user_num, user=user)
+    return render_template('edituser.html',user_num=user_num, user=user)
 
 
 @app.route('/users/<int:user_num>/edit', methods=["POST"])
@@ -145,8 +145,6 @@ def store_edits(user_num):
     
     db.session.commit()
 
-
-    
     return redirect('/users')
 
 
@@ -156,16 +154,96 @@ def delete_user(user_num):
     """
     Process the edit form, returning the user to the /users page.
     """
-
-    # return the user to the /users page.
     user = User.query.get_or_404(user_num)
 
     db.session.delete(user)
     db.session.commit()
     
-    #route not yet tested
     return redirect('/users')
 
+@app.route('/users/<int:user_num>/posts/new')
+def new_post_form(user_num):
+
+    user = User.query.get_or_404(user_num)
+    
+    return render_template('makepost.html',user=user,user_num=user_num)
 
 
-# @app.route()
+@app.route('/users/<int:user_num>/posts/new', methods=["POST"])
+def add_new_post(user_num):
+    """Handle add form; add post and redirect to the user detail page."""
+
+    user = User.query.get_or_404(user_num)
+
+    title = request.form.get("title")
+    content = request.form.get("content")
+    
+    #logic, error checking
+    if '' in [title, content] or len(title) > 50 or len(content) > 5000: #bad to hardcore numbers; refactor possibly
+        redir_route = '/users/' + str(user_num) + '/posts/new'
+        return redirect(redir_route)
+
+    new_post = Post(title=title, content=content, user_id=user_num)#idk if text needs to be paren or not
+
+    
+    db.session.add(new_post)
+    db.session.commit()
+
+    return render_template('details.html',user=user)
+
+
+@app.route('/posts/<int:post_id>')
+def show_post(post_id):
+    """Show a post. Show buttons to edit and delete the post."""
+    post = Post.query.get_or_404(post_id)
+
+    return render_template('viewpost.html', post=post)
+
+
+@app.route('/posts/<int:post_id>/edit')
+def edit_post_form(post_id):
+    """Show form to edit a post, and to cancel (back to user page)."""
+
+    post = Post.query.get_or_404(post_id)
+
+    return render_template('editpost.html', post=post)
+
+
+@app.route('/posts/<int:post_id>/edit', methods=["POST"])
+def edit_post(post_id):
+    """Handle editing of a post. Redirect back to the post view."""
+    post = Post.query.get_or_404(post_id)
+
+    title = request.form.get("title")
+    content = request.form.get("content")
+
+    if len(title) > 50 or len(content) > 5000: #bad to hardcore numbers; refactor possibly
+        redir_route = '/posts/' + str(post_id) + '/edit'
+        return redirect(redir_route)
+    
+    if '' != title:
+        post.title = title
+        
+    if '' != content:
+        post.content = content
+
+    #update created at maybe or updated at col
+    
+
+    db.session.commit()
+
+    return redirect(f"/posts/{post_id}")
+    #might need to make this a str to return correct route
+
+
+@app.route('/posts/<int:post_id>/delete', methods=["POST"])
+def delete_post(post_id):
+
+    #make queries to do this
+    post = Post.query.get_or_404(post_id)
+    user = post.user
+
+    db.session.delete(post)
+    db.session.commit()
+
+    return redirect(f"/users/{user.id}")

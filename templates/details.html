@@ -27,7 +27,19 @@
     
     
 </section>
+<br>
 
+<section id="user-posts">
+    <h5>POSTS:</h5>
+    <ul>
+        {% for post in user.posts %}
+            <li>
+                <a href="/posts/{{post.id}}">{{post.title}}
+                </a>
+            </li>
+        {% endfor %}
+    </ul>    
+</section>
 
 
 {% endblock %}
